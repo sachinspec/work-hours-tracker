@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>Work Hours Tracker</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--text:#172033;--muted:#697386;--line:#e6eaf0;--accent:#2563eb;--accent2:#dbeafe;--green:#07865b;--red:#d14343;--shadow:0 8px 28px rgba(20,35,60,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body.dark{--bg:#0d1422;--card:#151f30;--text:#edf2fa;--muted:#a2aec1;--line:#29364b;--accent:#7aa7ff;--accent2:#233957;--green:#4bd3a1;--red:#ff7777;--shadow:0 8px 28px rgba(0,0,0,.18)}
+.wrap{max-width:980px;margin:auto;padding:22px 16px 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.brand h1{font-size:25px;margin:0}.brand p{color:var(--muted);margin:3px 0 0}.actions{display:flex;gap:8px;flex-wrap:wrap}
+button,.btn{border:0;border-radius:11px;padding:10px 14px;background:var(--accent);color:white;font-weight:650;cursor:pointer;font-size:14px}
+button.secondary{background:var(--card);color:var(--text);border:1px solid var(--line)}button.danger{background:#fee2e2;color:#991b1b}body.dark button.danger{background:#4a252d;color:#ffb3b3}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.stat-label{color:var(--muted);font-size:13px}.stat-value{font-size:25px;font-weight:750;margin-top:5px;letter-spacing:-.5px}.stat-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.panel{margin-bottom:16px}.panel h2{font-size:17px;margin:0 0 14px}.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;min-width:0}
+.form-actions{display:flex;align-items:center;gap:9px;margin-top:14px;flex-wrap:wrap}.hint{color:var(--muted);font-size:12px}
+.progress-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}.bar{height:11px;background:var(--line);border-radius:20px;overflow:hidden}.bar>div{height:100%;background:var(--green);width:0%;border-radius:20px;transition:width .2s}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:610px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:13px}th{color:var(--muted);font-weight:600}td strong{font-size:14px}.row-actions{display:flex;gap:6px}.row-actions button{padding:7px 9px;font-size:12px}.empty{text-align:center;color:var(--muted);padding:28px 8px}
+.monthrow{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.monthrow>div{min-width:170px;flex:1}.monthrow .target{max-width:190px}.badge{display:inline-block;background:var(--accent2);color:var(--accent);border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:20px}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.formgrid{grid-template-columns:repeat(2,1fr)}.stat-value{font-size:22px}.brand h1{font-size:22px}}
+@media(max-width:420px){.wrap{padding:16px 11px 35px}.top{align-items:flex-start}.actions button{padding:9px 10px}.formgrid{gap:9px}.card{padding:13px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>⏱ Work Hours</h1><p>Track shifts. Calculate your earnings.</p></div>
+    <div class="actions"><button class="secondary" id="themeBtn" type="button">🌙 Theme</button><button class="secondary" id="exportBtn" type="button">Export CSV</button></div>
+  </header>
+
+  <section class="card panel">
+    <div class="monthrow">
+      <div><label for="month">Monthly view</label><input id="month" type="month"></div>
+      <div class="target"><label for="target">Monthly target (₹)</label><input id="target" type="number" min="0" step="1" value="6500"></div>
+      <div class="target"><label for="rate">Hourly rate (₹)</label><input id="rate" type="number" min="0" step="0.01" value="40"></div>
+    </div>
+    <div class="hint" style="margin-top:10px">Target and hourly rate are saved on this device.</div>
+  </section>
+
+  <section class="grid">
+    <div class="card"><div class="stat-label">Total earnings</div><div class="stat-value" id="earnings">₹0</div><div class="stat-sub" id="days">0 working days</div></div>
+    <div class="card"><div class="stat-label">Working hours</div><div class="stat-value" id="hours">0h 0m</div><div class="stat-sub">After break deductions</div></div>
+    <div class="card"><div class="stat-label">Target remaining</div><div class="stat-value" id="remaining">₹6,500</div><div class="stat-sub">Monthly target balance</div></div>
+    <div class="card"><div class="stat-label">Daily average</div><div class="stat-value" id="average">₹0</div><div class="stat-sub">Per recorded workday</div></div>
+  </section>
+
+  <section class="card panel">
+    <div class="progress-head"><h2 style="margin:0">Monthly target progress</h2><strong id="progressText">0%</strong></div>
+    <div class="bar"><div id="progressBar"></div></div>
+  </section>
+
+  <section class="card panel">
+    <h2 id="formTitle">Add a work shift</h2>
+    <form id="shiftForm">
+      <div class="formgrid">
+        <div><label for="date">Work date</label><input id="date" type="date" required></div>
+        <div><label for="start">IN time</label><input id="start" type="time" required></div>
+        <div><label for="end">OUT time</label><input id="end" type="time" required></div>
+        <div><label for="break">Break (minutes)</label><input id="break" type="number" min="0" step="1" value="0"></div>
+      </div>
+      <div class="form-actions"><button type="submit" id="saveBtn">＋ Save shift</button><button type="button" class="secondary" id="cancelBtn" hidden>Cancel edit</button><span class="hint">Overnight shifts are supported.</span></div>
+    </form>
+  </section>
+
+  <section class="card panel">
+    <h2>Shift history <span class="badge" id="entryCount">0 entries</span></h2>
+    <div class="table-wrap">
+      <table><thead><tr><th>Date</th><th>IN – OUT</th><th>Break</th><th>Duration</th><th>Earnings</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table>
+      <div class="empty" id="empty">No shifts recorded for this month. Add your first shift above.</div>
+    </div>
+  </section>
+  <footer>Your records stay in this browser on this device. Export CSV regularly as a backup.</footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const KEY='workHoursTracker_v1';
+let state={entries:[],targets:{},rates:{},theme:'light'},editingId=null;
+try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');if(saved)state={...state,...saved};}catch(e){}
+const todayLocal=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const currentMonth=()=>todayLocal().slice(0,7);
+$('month').value=currentMonth();$('date').value=todayLocal();
+$('themeBtn').textContent=state.theme==='dark'?'☀️ Theme':'🌙 Theme';
+document.body.classList.toggle('dark',state.theme==='dark');
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function money(n){return '₹'+(Number(n)||0).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2})}
+function duration(e){let [sh,sm]=e.start.split(':').map(Number),[eh,em]=e.end.split(':').map(Number);let mins=eh*60+em-(sh*60+sm);if(mins<=0)mins+=1440;return Math.max(0,mins-(Number(e.break)||0))}
+function fmtMins(m){return `${Math.floor(m/60)}h ${m%60}m`}
+function monthEntries(){return state.entries.filter(e=>e.date.startsWith($('month').value)).sort((a,b)=>b.date.localeCompare(a.date)||b.start.localeCompare(a.start))}
+function syncSettings(){const m=$('month').value;$('target').value=state.targets[m]??6500;$('rate').value=state.rates[m]??40}
+function render(){
+ const es=monthEntries(),rate=Number($('rate').value)||0,target=Number($('target').value)||0;
+ const mins=es.reduce((s,e)=>s+duration(e),0),earned=mins/60*rate,days=new Set(es.map(e=>e.date)).size,remaining=Math.max(0,target-earned),pct=target>0?Math.min(100,earned/target*100):0;
+ $('earnings').textContent=money(earned);$('days').textContent=`${days} working ${days===1?'day':'days'}`;$('hours').textContent=fmtMins(mins);$('remaining').textContent=money(remaining);$('average').textContent=money(days?earned/days:0);$('progressText').textContent=`${pct.toFixed(1)}%`;$('progressBar').style.width=pct+'%';$('entryCount').textContent=`${es.length} ${es.length===1?'entry':'entries'}`;
+ $('rows').innerHTML=es.map(e=>{const m=duration(e),amt=m/60*rate;return `<tr><td><strong>${new Date(e.date+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'})}</strong></td><td>${e.start} – ${e.end}</td><td>${Number(e.break)||0} min</td><td>${fmtMins(m)}</td><td><strong>${money(amt)}</strong></td><td><div class="row-actions"><button class="secondary" data-edit="${e.id}">Edit</button><button class="danger" data-del="${e.id}">Delete</button></div></td></tr>`}).join('');
+ $('empty').style.display=es.length?'none':'block';
+}
+function resetForm(){editingId=null;$('shiftForm').reset();$('date').value=todayLocal();$('break').value=0;$('formTitle').textContent='Add a work shift';$('saveBtn').textContent='＋ Save shift';$('cancelBtn').hidden=true}
+$('shiftForm').addEventListener('submit',ev=>{
+ ev.preventDefault();const e={id:editingId||String(Date.now()),date:$('date').value,start:$('start').value,end:$('end').value,break:Math.max(0,Number($('break').value)||0)};
+ if(duration(e)<=0){alert('Break time must be shorter than the shift.');return}
+ if(!editingId&&state.entries.some(x=>x.date===e.date)){if(!confirm('A shift already exists for this date. Add another shift anyway?'))return}
+ if(editingId)state.entries=state.entries.map(x=>x.id===editingId?e:x);else state.entries.push(e);
+ save();resetForm();$('month').value=e.date.slice(0,7);syncSettings();render();
+});
+$('rows').addEventListener('click',ev=>{
+ const edit=ev.target.dataset.edit,del=ev.target.dataset.del;
+ if(edit){const e=state.entries.find(x=>x.id===edit);if(!e)return;editingId=e.id;$('date').value=e.date;$('start').value=e.start;$('end').value=e.end;$('break').value=e.break;$('formTitle').textContent='Edit work shift';$('saveBtn').textContent='Save changes';$('cancelBtn').hidden=false;window.scrollTo({top:0,behavior:'smooth'});}
+ if(del){if(!confirm('Delete this shift?'))return;state.entries=state.entries.filter(x=>x.id!==del);save();render();}
+});
+$('cancelBtn').addEventListener('click',resetForm);
+$('month').addEventListener('change',()=>{syncSettings();render()});
+$('target').addEventListener('change',()=>{state.targets[$('month').value]=Math.max(0,Number($('target').value)||0);save();render()});
+$('rate').addEventListener('change',()=>{state.rates[$('month').value]=Math.max(0,Number($('rate').value)||0);save();render()});
+$('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';document.body.classList.toggle('dark',state.theme==='dark');$('themeBtn').textContent=state.theme==='dark'?'☀️ Theme':'🌙 Theme';save()});
+$('exportBtn').addEventListener('click',()=>{
+ const es=monthEntries(),rate=Number($('rate').value)||0;const lines=[['Date','IN','OUT','Break minutes','Net minutes','Net hours','Hourly rate','Earnings']];
+ es.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{const m=duration(e);lines.push([e.date,e.start,e.end,e.break,m,(m/60).toFixed(2),rate,(m/60*rate).toFixed(2)])});
+ const csv=lines.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`work-hours-${$('month').value||'all'}.csv`;a.click();URL.revokeObjectURL(url);
+});
+syncSettings();render();
+</script>
+</body>
+</html>
